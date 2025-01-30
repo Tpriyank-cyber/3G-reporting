@@ -66,7 +66,7 @@ if uploaded_file:
             df['PS RAB SR'] = (df['PS_RAB_Num_M'] / df['PS_RAB_Denum_M'].replace(0, 1)) * 100
             df['CS DCR'] = (df['CSDROPNOM_C'] / df['CSDROPDENOM_C'].replace(0, 1)) * 100
             df['HS DCR'] = (df['HSDROP_NUM_V'] / df['HSDROP_DENOM_V'].replace(0, 1)) * 100
-            return df
+                return df
 
         # Function for Data Processing
         def process_data(df, processing_type, hour_input):
