@@ -53,7 +53,7 @@ if uploaded_file:
                     'CS_RAB_Num_M', 'CS_RAB_Denum_M', 'PS_RAB_Num_M', 'PS_RAB_Denum_M',
                     'CSDROPNOM_C', 'CSDROPDENOM_C', 'HSDROP_NUM_V', 'HSDROP_DENOM_V']
             
-            for col in required_columns:
+        for col in required_columns:
             if col not in df.columns:
                 df[col] = 0  # Create missing columns with default 0 values
             else:
