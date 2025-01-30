@@ -47,14 +47,27 @@ if uploaded_file:
         ]
 
         # Function to calculate KPIs
-        def calculate_kpis(df):
-            df['CS RRC SR'] = df.apply(lambda x: (x.get('CS_RRC_Num_M', 0) / x.get('CS_RRC_Denum_M', 1)) * 100, axis=1)
-            df['PS RRC SR'] = df.apply(lambda x: (x.get('PS_RRC_Num_M', 0) / x.get('PS_RRC_Denum_M', 1)) * 100, axis=1)
-            df['CS RAB SR'] = df.apply(lambda x: (x.get('CS_RAB_Num_M', 0) / x.get('CS_RAB_Denum_M', 1)) * 100, axis=1)
-            df['PS RAB SR'] = df.apply(lambda x: (x.get('PS_RAB_Num_M', 0) / x.get('PS_RAB_Denum_M', 1)) * 100, axis=1)
-            df['CS DCR'] = df.apply(lambda x: (x.get('CSDROPNOM_C', 0) / x.get('CSDROPDENOM_C', 1)) * 100, axis=1)
-            df['HS DCR'] = df.apply(lambda x: (x.get('HSDROP_NUM_V', 0) / x.get('HSDROP_DENOM_V', 1)) * 100, axis=1)
-            return df
+def calculate_kpis(df):
+    # Ensure required columns exist, fill missing values with 0
+    required_columns = ['CS_RRC_Num_M', 'CS_RRC_Denum_M', 'PS_RRC_Num_M', 'PS_RRC_Denum_M',
+                        'CS_RAB_Num_M', 'CS_RAB_Denum_M', 'PS_RAB_Num_M', 'PS_RAB_Denum_M',
+                        'CSDROPNOM_C', 'CSDROPDENOM_C', 'HSDROP_NUM_V', 'HSDROP_DENOM_V']
+
+    for col in required_columns:
+        if col not in df.columns:
+            df[col] = 0  # Create missing columns with default 0 values
+        else:
+            df[col] = df[col].fillna(0)  # Replace NaN with 0
+    
+    # Calculate KPIs safely
+    df['CS RRC SR'] = (df['CS_RRC_Num_M'] / df['CS_RRC_Denum_M'].replace(0, 1)) * 100
+    df['PS RRC SR'] = (df['PS_RRC_Num_M'] / df['PS_RRC_Denum_M'].replace(0, 1)) * 100
+    df['CS RAB SR'] = (df['CS_RAB_Num_M'] / df['CS_RAB_Denum_M'].replace(0, 1)) * 100
+    df['PS RAB SR'] = (df['PS_RAB_Num_M'] / df['PS_RAB_Denum_M'].replace(0, 1)) * 100
+    df['CS DCR'] = (df['CSDROPNOM_C'] / df['CSDROPDENOM_C'].replace(0, 1)) * 100
+    df['HS DCR'] = (df['HSDROP_NUM_V'] / df['HSDROP_DENOM_V'].replace(0, 1)) * 100
+
+    return df
 
         # Function for Data Processing
         def process_data(df, processing_type, hour_input):
