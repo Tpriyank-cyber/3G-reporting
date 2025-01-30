@@ -7,8 +7,8 @@ st.title("📊 3G KPI Data Processing Tool")
 # Upload file
 uploaded_file = st.file_uploader("📂 Upload your Excel file", type=["xlsx"])
 
-# Dropdown for sheet selection
-sheet_type = st.selectbox("Select sheet type:", ["BBH", "Continue"])
+# Dropdown for processing type selection
+processing_type = st.selectbox("Select processing type:", ["Daily", "Hourly"])
 
 # Define KPI Columns
 KPI_Obj = [
@@ -17,6 +17,11 @@ KPI_Obj = [
     'Inter sys RT Hard HO SR', 'Max simult HSDPA users', 'PS Traffic',
     'SHO_SR_M', 'Average RTWP'
 ]
+
+# Hour Selection (Only if "Hourly" is selected)
+hour_input = None
+if processing_type == "Hourly":
+    hour_input = st.selectbox("Select Hour for Processing:", list(range(0, 24)))  # Dropdown with hours 0-23
 
 # Function to calculate KPIs
 def calculate_kpis(df):
@@ -29,19 +34,22 @@ def calculate_kpis(df):
     return df
 
 # Function for Data Processing
-def process_data(uploaded_file, sheet_type):
+def process_data(uploaded_file, processing_type, hour_input):
     df = pd.read_excel(uploaded_file)
     df['Start Time'] = pd.to_datetime(df['Period start time'])
     df["Date"] = df["Period start time"].dt.date
+    df["Hour"] = df["Period start time"].dt.hour
     df = calculate_kpis(df)
 
-    # Selecting Processing Type
-    if sheet_type == "BBH":
+    if processing_type == "Daily":
         pivot = pd.pivot_table(df, index=['RNC name', 'WBTS name'], columns='Date', values=KPI_Obj, aggfunc='sum')
         output_filename = "3G_Day_Site_Level_KPIs_output.xlsx"
-    else:
-        pivot = pd.pivot_table(df, index=['RNC name', 'WCEL name'], columns='Date', values=KPI_Obj, aggfunc='sum')
-        output_filename = "3G_Day_Cell_Level_KPIs_output.xlsx"
+
+    else:  # Hourly Processing
+        if hour_input is not None:
+            df = df[df["Hour"] == hour_input]  # Filter for selected hour
+        pivot = pd.pivot_table(df, index=['RNC name', 'WCEL name'], columns=['Date', 'Hour'], values=KPI_Obj, aggfunc='sum')
+        output_filename = "3G_Hourly_Cell_Level_KPIs_output.xlsx"
 
     pivot = pivot.stack(level=0).reset_index(drop=False)
     pivot.rename(columns={'level_1': 'KPI NAME'}, inplace=True)
@@ -51,7 +59,7 @@ def process_data(uploaded_file, sheet_type):
 # Button to Process File
 if uploaded_file:
     if st.button("🔄 Process Data"):
-        processed_df, output_filename = process_data(uploaded_file, sheet_type)
+        processed_df, output_filename = process_data(uploaded_file, processing_type, hour_input)
 
         # Convert to Excel for Download
         @st.cache_data
