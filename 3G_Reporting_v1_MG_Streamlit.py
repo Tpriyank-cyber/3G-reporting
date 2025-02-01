@@ -1,62 +1,58 @@
 import streamlit as st
 import pandas as pd
-import os
 
+# Streamlit App Title
+st.title("📊 3G KPI Data Processing Tool")
+
+# Upload file
+uploaded_file = st.file_uploader("📂 Upload your Excel file", type=["xlsx"])
+
+# Dropdown for sheet selection
+sheet_type = st.selectbox("Select sheet type:", ["BBH", "Continue"])
+
+# Define KPI Columns
+KPI_Obj = [
+    'CS RRC SR', 'PS RRC SR', 'CS RAB SR', 'PS RAB SR', 'CS DCR', 'HS DCR',
+    'Act HS-DSCH end usr thp', 'CellAvailabilityexcluding', 'CS Traffic',
+    'Inter sys RT Hard HO SR', 'Max simult HSDPA users', 'PS Traffic',
+    'SHO_SR_M', 'Average RTWP'
+]
+
+# Function to calculate KPIs
 def calculate_kpis(df):
-    required_columns = ['CS_RRC_Num_M', 'CS_RRC_Denum_M', 'PS_RRC_Num_M', 'PS_RRC_Denum_M', 'CS_RAB_Num_M', 'CS_RAB_Denum_M', 'PS_RAB_Num_M', 'PS_RAB_Denum_M', 'CSDROPNOM_C', 'CSDROPDENOM_C', 'HSDROP_NUM_V', 'HSDROP_DENOM_V']
-    
-    df.columns = df.columns.str.strip()
-    
-    for col in required_columns:
-        if col not in df.columns:
-            st.error(f"Missing required column: {col}")
-            return df
-        df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
-    
-    df['CS RRC SR'] = (df['CS_RRC_Num_M'] / df['CS_RRC_Denum_M']) * 100
-    df['PS RRC SR'] = (df['PS_RRC_Num_M'] / df['PS_RRC_Denum_M']) * 100
-    df['CS RAB SR'] = (df['CS_RAB_Num_M'] / df['CS_RAB_Denum_M']) * 100
-    df['PS RAB SR'] = (df['PS_RAB_Num_M'] / df['PS_RAB_Denum_M']) * 100
-    df['CS DCR'] = (df['CSDROPNOM_C'] / df['CSDROPDENOM_C']) * 100
-    df['HS DCR'] = (df['HSDROP_NUM_V'] / df['HSDROP_DENOM_V']) * 100
+    df['CS RRC SR'] = df.apply(lambda x: (x['CS_RRC_Num_M'] / x['CS_RRC_Denum_M']) * 100 if x['CS_RRC_Denum_M'] != 0 else 0, axis=1)
+    df['PS RRC SR'] = df.apply(lambda x: (x['PS_RRC_Num_M'] / x['PS_RRC_Denum_M']) * 100 if x['PS_RRC_Denum_M'] != 0 else 0, axis=1)
+    df['CS RAB SR'] = df.apply(lambda x: (x['CS_RAB_Num_M'] / x['CS_RAB_Denum_M']) * 100 if x['CS_RAB_Denum_M'] != 0 else 0, axis=1)
+    df['PS RAB SR'] = df.apply(lambda x: (x['PS_RAB_Num_M'] / x['PS_RAB_Denum_M']) * 100 if x['PS_RAB_Denum_M'] != 0 else 0, axis=1)
+    df['CS DCR'] = df.apply(lambda x: (x['CSDROPNOM_C'] / x['CSDROPDENOM_C']) * 100 if x['CSDROPDENOM_C'] != 0 else 0, axis=1)
+    df['HS DCR'] = df.apply(lambda x: (x['HSDROP_NUM_V'] / x['HSDROP_DENOM_V']) * 100 if x['HSDROP_DENOM_V'] != 0 else 0, axis=1)
     return df
 
-def process_data(df, level, selected_hour):
+# Button to Process File
+if uploaded_file:
+    df = pd.read_excel(uploaded_file)
     df['Start Time'] = pd.to_datetime(df['Period start time'], errors='coerce')
     df['Date'] = df['Start Time'].dt.date
+    df['Hour'] = df['Start Time'].dt.hour
     df = calculate_kpis(df)
     
-    if level == "Day Level":
-        pivot = pd.pivot_table(df, index=['PLMN Name'], columns='Date', values=['CS RRC SR', 'PS RRC SR', 'CS RAB SR', 'PS RAB SR'], aggfunc='sum')
-    elif level == "Hourly Level":
-        df['Hour'] = df['Start Time'].dt.hour
-        if selected_hour is not None:
-            df = df[df['Hour'] == selected_hour]
-        pivot = pd.pivot_table(df, index=['RNC name', 'WCEL name'], columns=['Date', 'Hour'], values=['CS RRC SR', 'PS RRC SR'], aggfunc='sum')
-    elif level == "BBH Level":
-        pivot = pd.pivot_table(df, index=['RNC name', 'WBTS name'], columns='Date', values=['CS RRC SR', 'PS RRC SR'], aggfunc='sum')
+    # Selecting Processing Type
+    if sheet_type == "BBH":
+        pivot = pd.pivot_table(df, index=['RNC name', 'WBTS name'], columns='Date', values=KPI_Obj, aggfunc='sum')
+        output_filename = "3G_Day_Site_Level_KPIs_output.xlsx"
     else:
-        st.error("Invalid processing level selected.")
-        return None
-    
-    return pivot.reset_index()
-
-st.title("3G KPI Data Processing")
-
-uploaded_file = st.file_uploader("Upload Excel file", type=["xlsx"])
-if uploaded_file is not None:
-    df = pd.read_excel(uploaded_file)
-    df.columns = df.columns.str.strip()
-    
-    level = st.radio("Select Processing Level", ["Day Level", "Hourly Level", "BBH Level"])
-    selected_hour = None
-    if level == "Hourly Level":
         selected_hour = st.number_input("Select Hour (0-23):", min_value=0, max_value=23, step=1)
+        if selected_hour >= 0:
+            df = df[df['Hour'] == selected_hour]
+        pivot = pd.pivot_table(df, index=['RNC name', 'WCEL name'], columns='Date', values=KPI_Obj, aggfunc='sum')
+        output_filename = "3G_Day_Cell_Level_KPIs_output.xlsx"
     
-    if st.button("Process Data"):
-        processed_df = process_data(df, level, selected_hour)
-        if processed_df is not None:
-            st.write("Processed Data:")
-            st.dataframe(processed_df.head())
-            csv = processed_df.to_csv(index=False).encode('utf-8')
-            st.download_button("Download Processed Data", csv, "processed_data.csv", "text/csv")
+    pivot = pivot.stack(level=0).reset_index(drop=False)
+    pivot.rename(columns={'level_1': 'KPI NAME'}, inplace=True)
+    
+    st.success("✅ Data Processed Successfully!")
+    st.dataframe(pivot.head())
+    
+    # Convert to CSV for Download
+    csv = pivot.to_csv(index=False).encode('utf-8')
+    st.download_button("⬇️ Download Processed Data", csv, output_filename, "text/csv")
