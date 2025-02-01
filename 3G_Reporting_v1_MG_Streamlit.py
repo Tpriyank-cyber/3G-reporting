@@ -18,19 +18,32 @@ KPI_Obj = [
     'SHO_SR_M', 'Average RTWP'
 ]
 
+required_columns = [
+    'CS_RRC_Num_M', 'CS_RRC_Denum_M', 'PS_RRC_Num_M', 'PS_RRC_Denum_M',
+    'CS_RAB_Num_M', 'CS_RAB_Denum_M', 'PS_RAB_Num_M', 'PS_RAB_Denum_M',
+    'CSDROPNOM_C', 'CSDROPDENOM_C', 'HSDROP_NUM_V', 'HSDROP_DENOM_V'
+]
+
 # Function to calculate KPIs
 def calculate_kpis(df):
-    df['CS RRC SR'] = df.apply(lambda x: (x['CS_RRC_Num_M'] / x['CS_RRC_Denum_M']) * 100 if x['CS_RRC_Denum_M'] != 0 else 0, axis=1)
-    df['PS RRC SR'] = df.apply(lambda x: (x['PS_RRC_Num_M'] / x['PS_RRC_Denum_M']) * 100 if x['PS_RRC_Denum_M'] != 0 else 0, axis=1)
-    df['CS RAB SR'] = df.apply(lambda x: (x['CS_RAB_Num_M'] / x['CS_RAB_Denum_M']) * 100 if x['CS_RAB_Denum_M'] != 0 else 0, axis=1)
-    df['PS RAB SR'] = df.apply(lambda x: (x['PS_RAB_Num_M'] / x['PS_RAB_Denum_M']) * 100 if x['PS_RAB_Denum_M'] != 0 else 0, axis=1)
-    df['CS DCR'] = df.apply(lambda x: (x['CSDROPNOM_C'] / x['CSDROPDENOM_C']) * 100 if x['CSDROPDENOM_C'] != 0 else 0, axis=1)
-    df['HS DCR'] = df.apply(lambda x: (x['HSDROP_NUM_V'] / x['HSDROP_DENOM_V']) * 100 if x['HSDROP_DENOM_V'] != 0 else 0, axis=1)
+    for col in required_columns:
+        if col not in df.columns:
+            st.warning(f"Missing column: {col}. Filling with 0.")
+            df[col] = 0
+        df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+    
+    df['CS RRC SR'] = (df['CS_RRC_Num_M'] / df['CS_RRC_Denum_M']).replace([float('inf'), -float('inf')], 0) * 100
+    df['PS RRC SR'] = (df['PS_RRC_Num_M'] / df['PS_RRC_Denum_M']).replace([float('inf'), -float('inf')], 0) * 100
+    df['CS RAB SR'] = (df['CS_RAB_Num_M'] / df['CS_RAB_Denum_M']).replace([float('inf'), -float('inf')], 0) * 100
+    df['PS RAB SR'] = (df['PS_RAB_Num_M'] / df['PS_RAB_Denum_M']).replace([float('inf'), -float('inf')], 0) * 100
+    df['CS DCR'] = (df['CSDROPNOM_C'] / df['CSDROPDENOM_C']).replace([float('inf'), -float('inf')], 0) * 100
+    df['HS DCR'] = (df['HSDROP_NUM_V'] / df['HSDROP_DENOM_V']).replace([float('inf'), -float('inf')], 0) * 100
     return df
 
 # Button to Process File
 if uploaded_file:
     df = pd.read_excel(uploaded_file)
+    df.columns = df.columns.str.strip()
     df['Start Time'] = pd.to_datetime(df['Period start time'], errors='coerce')
     df['Date'] = df['Start Time'].dt.date
     df['Hour'] = df['Start Time'].dt.hour
