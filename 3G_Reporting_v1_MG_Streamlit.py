@@ -49,11 +49,11 @@ if uploaded_file:
     
     # Get the length of the value in the 3rd row and 1st column
     len_value = len(df.iloc[2, 0])
-    st.write(f"Length of value in 3rd row, 1st column (Period start time): {len_value}")
+    #st.write(f"Length of value in 3rd row, 1st column (Period start time): {len_value}")
     
     # List all columns in the dataframe
     df_columns_list = df.columns
-    st.write("Columns in uploaded file:", df_columns_list)
+    #st.write("Columns in uploaded file:", df_columns_list)
 
     # Clean up column names to avoid issues with extra spaces
     df.columns = df.columns.str.strip()
