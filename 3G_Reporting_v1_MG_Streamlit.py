@@ -43,14 +43,27 @@ def calculate_kpis(df):
 # Button to Process File
 if uploaded_file:
     df = pd.read_excel(uploaded_file)
-    df.columns = df.columns.str.strip()  # Ensure no leading/trailing spaces in column names
-    st.write("Columns in uploaded file:", df.columns)  # Debug: Print column names
     
+    # Convert 'Period start time' to string
+    df['Period start time'] = df['Period start time'].astype(str)
+    
+    # Get the length of the value in the 3rd row and 1st column
+    len_value = len(df.iloc[2, 0])
+    st.write(f"Length of value in 3rd row, 1st column (Period start time): {len_value}")
+    
+    # List all columns in the dataframe
+    df_columns_list = df.columns
+    st.write("Columns in uploaded file:", df_columns_list)
+
+    # Clean up column names to avoid issues with extra spaces
+    df.columns = df.columns.str.strip()
+
     # Check if required columns exist
     missing_columns = [col for col in ['RNC name', 'WCEL name', 'Date'] if col not in df.columns]
     if missing_columns:
         st.error(f"Missing columns: {', '.join(missing_columns)}")
     else:
+        # Proceed with other transformations
         df['Start Time'] = pd.to_datetime(df['Period start time'], errors='coerce')
         df['Date'] = df['Start Time'].dt.date
         df['Hour'] = df['Start Time'].dt.hour
