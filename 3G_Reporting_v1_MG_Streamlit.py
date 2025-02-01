@@ -65,6 +65,8 @@ if uploaded_file:
     
     st.success("✅ Data Processed Successfully!")
     st.dataframe(pivot.head())
+
+    st.write(KPI_Obj)
     
     # Convert to CSV for Download
     csv = pivot.to_csv(index=False).encode('utf-8')
