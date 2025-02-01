@@ -43,31 +43,36 @@ def calculate_kpis(df):
 # Button to Process File
 if uploaded_file:
     df = pd.read_excel(uploaded_file)
-    df.columns = df.columns.str.strip()
-    df['Start Time'] = pd.to_datetime(df['Period start time'], errors='coerce')
-    df['Date'] = df['Start Time'].dt.date
-    df['Hour'] = df['Start Time'].dt.hour
-    df = calculate_kpis(df)
+    df.columns = df.columns.str.strip()  # Ensure no leading/trailing spaces in column names
+    st.write("Columns in uploaded file:", df.columns)  # Debug: Print column names
     
-    # Selecting Processing Type
-    if sheet_type == "BBH":
-        pivot = pd.pivot_table(df, index=['RNC name', 'WBTS name'], columns='Date', values=KPI_Obj, aggfunc='sum')
-        output_filename = "3G_Day_Site_Level_KPIs_output.xlsx"
+    # Check if required columns exist
+    missing_columns = [col for col in ['RNC name', 'WCEL name', 'Date'] if col not in df.columns]
+    if missing_columns:
+        st.error(f"Missing columns: {', '.join(missing_columns)}")
     else:
-        selected_hour = st.number_input("Select Hour (0-23):", min_value=0, max_value=23, step=1)
-        if selected_hour >= 0:
-            df = df[df['Hour'] == selected_hour]
-        pivot = pd.pivot_table(df, index=['RNC name', 'WCEL name'], columns='Date', values=KPI_Obj, aggfunc='sum')
-        output_filename = "3G_Day_Cell_Level_KPIs_output.xlsx"
-    
-    pivot = pivot.stack(level=0).reset_index(drop=False)
-    pivot.rename(columns={'level_1': 'KPI NAME'}, inplace=True)
-    
-    st.success("✅ Data Processed Successfully!")
-    st.dataframe(pivot.head())
-
-    st.write(KPI_Obj)
-    
-    # Convert to CSV for Download
-    csv = pivot.to_csv(index=False).encode('utf-8')
-    st.download_button("⬇️ Download Processed Data", csv, output_filename, "text/csv")
+        df['Start Time'] = pd.to_datetime(df['Period start time'], errors='coerce')
+        df['Date'] = df['Start Time'].dt.date
+        df['Hour'] = df['Start Time'].dt.hour
+        df = calculate_kpis(df)
+        
+        # Selecting Processing Type
+        if sheet_type == "BBH":
+            pivot = pd.pivot_table(df, index=['RNC name', 'WBTS name'], columns='Date', values=KPI_Obj, aggfunc='sum')
+            output_filename = "3G_Day_Site_Level_KPIs_output.xlsx"
+        else:
+            selected_hour = st.number_input("Select Hour (0-23):", min_value=0, max_value=23, step=1)
+            if selected_hour >= 0:
+                df = df[df['Hour'] == selected_hour]
+            pivot = pd.pivot_table(df, index=['RNC name', 'WCEL name'], columns='Date', values=KPI_Obj, aggfunc='sum')
+            output_filename = "3G_Day_Cell_Level_KPIs_output.xlsx"
+        
+        pivot = pivot.stack(level=0).reset_index(drop=False)
+        pivot.rename(columns={'level_1': 'KPI NAME'}, inplace=True)
+        
+        st.success("✅ Data Processed Successfully!")
+        st.dataframe(pivot.head())
+        
+        # Convert to CSV for Download
+        csv = pivot.to_csv(index=False).encode('utf-8')
+        st.download_button("⬇️ Download Processed Data", csv, output_filename, "text/csv")
