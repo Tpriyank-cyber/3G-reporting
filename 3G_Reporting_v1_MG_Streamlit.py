@@ -74,9 +74,9 @@ if uploaded_file:
     st.success("✅ Data Processed Successfully!")
     st.dataframe(pivot.head())
 
-    # Convert to Excel for Download
+    # Convert to Excel for Download using `openpyxl`
     output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
         pivot.to_excel(writer, index=False, sheet_name="Processed Data")
         writer.close()
     
