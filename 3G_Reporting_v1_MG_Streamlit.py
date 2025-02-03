@@ -69,7 +69,7 @@ if uploaded_file:
         output_filename = "3G_Day_Cell_Level_KPIs_output.csv"
     
     pivot = pivot.stack(level=0).reset_index(drop=False)
-    pivot.rename(columns={'level_1': 'KPI NAME'}, inplace=True)
+    pivot.rename(columns={'level_2': 'KPI NAME'}, inplace=True)
     
     st.success("✅ Data Processed Successfully!")
     st.dataframe(pivot.head())
