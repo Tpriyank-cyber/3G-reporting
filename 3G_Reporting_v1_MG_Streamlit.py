@@ -60,13 +60,13 @@ if uploaded_file:
     # Selecting Processing Type
     if sheet_type == "BBH":
         pivot = pd.pivot_table(df, index=['RNC name', 'WBTS name'], columns='Date', values=KPI_Obj, aggfunc='sum')
-        output_filename = "3G_Day_Site_Level_KPIs_output.xlsx"
+        output_filename = "3G_Day_Site_Level_KPIs_output.csv"
     else:
         selected_hour = st.number_input("Select Hour (0-23):", min_value=0, max_value=23, step=1)
         if selected_hour >= 0:
             df = df[df['Hour'] == selected_hour]
         pivot = pd.pivot_table(df, index=['RNC name', 'WCEL name'], columns='Date', values=KPI_Obj, aggfunc='sum')
-        output_filename = "3G_Day_Cell_Level_KPIs_output.xlsx"
+        output_filename = "3G_Day_Cell_Level_KPIs_output.csv"
     
     pivot = pivot.stack(level=0).reset_index(drop=False)
     pivot.rename(columns={'level_1': 'KPI NAME'}, inplace=True)
@@ -74,15 +74,12 @@ if uploaded_file:
     st.success("✅ Data Processed Successfully!")
     st.dataframe(pivot.head())
 
-    # Convert to Excel for Download using `openpyxl`
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        pivot.to_excel(writer, index=False, sheet_name="Processed Data")
-        writer.close()
+    # Convert to CSV for Download
+    csv = pivot.to_csv(index=False, encoding='utf-8-sig')
     
     st.download_button(
         label="⬇️ Download Processed Data",
-        data=output.getvalue(),
+        data=csv,
         file_name=output_filename,
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        mime="text/csv"
     )
