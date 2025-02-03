@@ -82,5 +82,5 @@ if uploaded_file:
     st.dataframe(pivot.head())
     
     # Convert to CSV for Download
-    csv = pivot.to_csv(index=False).encode('utf-8')
+    csv = pivot.to_csv(index=False).encode('utf-8-sig')
     st.download_button("⬇️ Download Processed Data", csv, output_filename, "text/csv")
