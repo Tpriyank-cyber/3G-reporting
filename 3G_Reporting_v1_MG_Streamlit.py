@@ -14,7 +14,7 @@ sheet_type = st.selectbox("Select sheet type:", ["BBH", "Continue"])
 # Define KPI Columns
 KPI_Obj = [
     'CS RRC SR', 'PS RRC SR', 'CS RAB SR', 'PS RAB SR', 'CS DCR', 'HS DCR',
-    'Act HS-DSCH end usr thp', 'CellAvailabilityexcluding', 'CS Traffic',
+    'Act HS-DSCH  end usr thp', 'CellAvailabilityexcluding', 'CS Traffic',
     'Inter sys RT Hard HO SR', 'Max simult HSDPA users', 'PS Traffic',
     'SHO_SR_M', 'Average RTWP'
 ]
