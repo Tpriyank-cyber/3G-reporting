@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import io
 
 # Streamlit App Title
 st.title("📊 3G KPI Data Processing Tool")
@@ -13,7 +14,7 @@ sheet_type = st.selectbox("Select sheet type:", ["BBH", "Continue"])
 # Define KPI Columns
 KPI_Obj = [
     'CS RRC SR', 'PS RRC SR', 'CS RAB SR', 'PS RAB SR', 'CS DCR', 'HS DCR',
-    'Act HS-DSCH  end usr thp', 'CellAvailabilityexcluding', 'CS Traffic',
+    'Act HS-DSCH end usr thp', 'CellAvailabilityexcluding', 'CS Traffic',
     'Inter sys RT Hard HO SR', 'Max simult HSDPA users', 'PS Traffic',
     'SHO_SR_M', 'Average RTWP'
 ]
@@ -47,14 +48,6 @@ if uploaded_file:
     # Convert 'Period start time' to string
     df['Period start time'] = df['Period start time'].astype(str)
     
-    # Get the length of the value in the 3rd row and 1st column
-    len_value = len(df.iloc[2, 0])
-    #st.write(f"Length of value in 3rd row, 1st column (Period start time): {len_value}")
-    
-    # List all columns in the dataframe
-    df_columns_list = df.columns
-    #st.write("Columns in uploaded file:", df_columns_list)
-
     # Clean up column names to avoid issues with extra spaces
     df.columns = df.columns.str.strip()
 
@@ -80,7 +73,16 @@ if uploaded_file:
     
     st.success("✅ Data Processed Successfully!")
     st.dataframe(pivot.head())
+
+    # Convert to Excel for Download
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        pivot.to_excel(writer, index=False, sheet_name="Processed Data")
+        writer.close()
     
-    # Convert to CSV for Download
-    csv = pivot.to_csv(index=False).encode('utf-8-sig')
-    st.download_button("⬇️ Download Processed Data", csv, output_filename, "text/csv")
+    st.download_button(
+        label="⬇️ Download Processed Data",
+        data=output.getvalue(),
+        file_name=output_filename,
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
